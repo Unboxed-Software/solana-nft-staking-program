@@ -15,6 +15,12 @@ import {
 import { createNft } from "./utils/setup"
 import { PROGRAM_ID } from "./utils/constants"
 import { getStakeAccount } from "./utils/accounts"
+import {
+  getAssociatedTokenAddress,
+  getOrCreateAssociatedTokenAccount,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token"
+import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata"
 
 async function testInitializeStakeAccount(
   connection: web3.Connection,
@@ -54,6 +60,10 @@ async function testStaking(
   const stakeInstruction = createStakingInstruction(
     keypair.publicKey,
     nft.tokenAddress,
+    nft.mintAddress,
+    nft.masterEditionAddress,
+    TOKEN_PROGRAM_ID,
+    METADATA_PROGRAM_ID,
     PROGRAM_ID
   )
 
@@ -78,11 +88,16 @@ async function testStaking(
 async function testRedeem(
   connection: web3.Connection,
   keypair: web3.Keypair,
-  nft: CreateNftOutput
+  nft: CreateNftOutput,
+  stakeMint: web3.PublicKey,
+  userStakeATA: web3.PublicKey
 ) {
   const redeemInstruction = createRedeemInstruction(
     keypair.publicKey,
     nft.tokenAddress,
+    stakeMint,
+    userStakeATA,
+    TOKEN_PROGRAM_ID,
     PROGRAM_ID
   )
 
@@ -107,11 +122,19 @@ async function testRedeem(
 async function testUnstaking(
   connection: web3.Connection,
   keypair: web3.Keypair,
-  nft: CreateNftOutput
+  nft: CreateNftOutput,
+  stakeMint: web3.PublicKey,
+  userStakeATA: web3.PublicKey
 ) {
   const unstakeInstruction = createUnstakeInstruction(
     keypair.publicKey,
     nft.tokenAddress,
+    nft.mintAddress,
+    nft.masterEditionAddress,
+    stakeMint,
+    userStakeATA,
+    TOKEN_PROGRAM_ID,
+    METADATA_PROGRAM_ID,
     PROGRAM_ID
   )
 
@@ -144,10 +167,21 @@ async function main() {
     .use(bundlrStorage())
   const nft = await createNft(metaplex)
 
+  const stakeMint = new web3.PublicKey(
+    "GRiN1c1h5bJ1qtTGFxtrRzzesAK5kmEAQCquGjq35qRL"
+  )
+
+  const userStakeATA = await getOrCreateAssociatedTokenAccount(
+    connection,
+    user,
+    stakeMint,
+    user.publicKey
+  )
+
   await testInitializeStakeAccount(connection, user, nft)
   await testStaking(connection, user, nft)
-  await testRedeem(connection, user, nft)
-  await testUnstaking(connection, user, nft)
+  await testRedeem(connection, user, nft, stakeMint, userStakeATA.address)
+  await testUnstaking(connection, user, nft, stakeMint, userStakeATA.address)
 }
 
 main()

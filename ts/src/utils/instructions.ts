@@ -1,3 +1,4 @@
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import {
   PublicKey,
   SystemProgram,
@@ -45,10 +46,19 @@ export function createInitializeStakeAccountInstruction(
 export function createStakingInstruction(
   nftHolder: PublicKey,
   nftTokenAccount: PublicKey,
+  nftMint: PublicKey,
+  nftEdition: PublicKey,
+  tokenProgram: PublicKey,
+  metadataProgram: PublicKey,
   programId: PublicKey
 ): TransactionInstruction {
   const [stakeAccount] = PublicKey.findProgramAddressSync(
     [nftHolder.toBuffer(), nftTokenAccount.toBuffer()],
+    programId
+  )
+
+  const [delegateAuthority] = PublicKey.findProgramAddressSync(
+    [Buffer.from("authority")],
     programId
   )
 
@@ -66,8 +76,33 @@ export function createStakingInstruction(
         isSigner: false,
       },
       {
+        pubkey: nftMint,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: nftEdition,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
         pubkey: stakeAccount,
         isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: delegateAuthority,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: tokenProgram,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: metadataProgram,
+        isWritable: false,
         isSigner: false,
       },
     ],
@@ -78,10 +113,18 @@ export function createStakingInstruction(
 export function createRedeemInstruction(
   nftHolder: PublicKey,
   nftTokenAccount: PublicKey,
+  mint: PublicKey,
+  userStakeATA: PublicKey,
+  tokenProgram: PublicKey,
   programId: PublicKey
 ): TransactionInstruction {
   const [stakeAccount] = PublicKey.findProgramAddressSync(
     [nftHolder.toBuffer(), nftTokenAccount.toBuffer()],
+    programId
+  )
+
+  const [mintAuth] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint")],
     programId
   )
 
@@ -102,19 +145,67 @@ export function createRedeemInstruction(
         pubkey: stakeAccount,
         isWritable: true,
         isSigner: false,
+      },
+      {
+        pubkey: mint,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: mintAuth,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: userStakeATA,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: tokenProgram,
+        isSigner: false,
+        isWritable: false,
       },
     ],
     data: Buffer.from([2]),
   })
 }
 
+// let account_info_iter = &mut accounts.iter();
+//     let user = next_account_info(account_info_iter)?;
+//     let nft_token_account = next_account_info(account_info_iter)?;
+//     let nft_mint = next_account_info(account_info_iter)?;
+//     let nft_edition = next_account_info(account_info_iter)?;
+//     let stake_state = next_account_info(account_info_iter)?;
+//     let program_authority = next_account_info(account_info_iter)?;
+//     let stake_mint = next_account_info(account_info_iter)?;
+//     let stake_authority = next_account_info(account_info_iter)?;
+//     let user_stake_ata = next_account_info(account_info_iter)?;
+//     let token_program = next_account_info(account_info_iter)?;
+//     let metadata_program = next_account_info(account_info_iter)?;
 export function createUnstakeInstruction(
   nftHolder: PublicKey,
   nftTokenAccount: PublicKey,
+  nftMint: PublicKey,
+  nftEdition: PublicKey,
+  stakeMint: PublicKey,
+  userStakeATA: PublicKey,
+  tokenProgram: PublicKey,
+  metadataProgram: PublicKey,
   programId: PublicKey
 ): TransactionInstruction {
   const [stakeAccount] = PublicKey.findProgramAddressSync(
     [nftHolder.toBuffer(), nftTokenAccount.toBuffer()],
+    programId
+  )
+
+  const [delegateAuthority] = PublicKey.findProgramAddressSync(
+    [Buffer.from("authority")],
+    programId
+  )
+
+  const [mintAuth] = PublicKey.findProgramAddressSync(
+    [Buffer.from("mint")],
     programId
   )
 
@@ -132,8 +223,48 @@ export function createUnstakeInstruction(
         isSigner: false,
       },
       {
+        pubkey: nftMint,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: nftEdition,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
         pubkey: stakeAccount,
         isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: delegateAuthority,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: stakeMint,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: mintAuth,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: userStakeATA,
+        isWritable: true,
+        isSigner: false,
+      },
+      {
+        pubkey: tokenProgram,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: metadataProgram,
+        isWritable: false,
         isSigner: false,
       },
     ],
